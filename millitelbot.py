@@ -1,4 +1,6 @@
-import telebot
+import os
+from flask import Flask, request
+from telebot import TeleBot
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -9,7 +11,8 @@ import time
 # Your Telegram bot token
 BOT_TOKEN = '7751935970:AAH8XtZSCrWMCOQF9LC0cYeH5sh4S9ulOC4'
 
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = TeleBot(BOT_TOKEN)
+app = Flask(__name__)
 
 def fetch_gold_prices(chat_id):
     options = webdriver.ChromeOptions()
@@ -53,5 +56,18 @@ def send_price(message):
     # Start a new thread to run the price-fetching loop
     threading.Thread(target=fetch_gold_prices, args=(chat_id,), daemon=True).start()
 
-# Polling to keep the bot running
-bot.polling(non_stop=True)
+# Endpoint for Render's health check
+@app.route('/health', methods=['GET'])
+def health_check():
+    return "OK", 200
+
+# Endpoint to start the bot
+@app.route('/start_bot', methods=['POST'])
+def start_bot():
+    threading.Thread(target=lambda: bot.polling(non_stop=True, interval=0)).start()
+    return "Bot started", 200
+
+# Bind to the required port (from Render's PORT environment variable)
+if __name__ == "__main__":
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host="0.0.0.0", port=port)
