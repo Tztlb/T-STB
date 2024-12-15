@@ -1,4 +1,0 @@
-telebot
-selenium
-webdriver_manager.chrome
-threading
